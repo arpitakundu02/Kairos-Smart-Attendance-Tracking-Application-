@@ -13,6 +13,16 @@ function pathByRole(role) {
   return role === "teacher" ? "/teacher" : "/student";
 }
 
+function LoadingShell() {
+  return (
+    <div className="auth-shell">
+      <section className="glass-panel auth-card loading-card">
+        <p className="auth-title">Loading your workspace...</p>
+      </section>
+    </div>
+  );
+}
+
 export default function App() {
   const [dark, setDark] = useState(() => {
     const savedTheme = window.localStorage.getItem("kairos-theme");
@@ -99,10 +109,16 @@ export default function App() {
   }, [session?.user]);
 
   async function handleLogout() {
-    await logoutUser();
+    try {
+      await logoutUser();
+    } catch {
+      setProfile(null);
+      setSession(null);
+    }
   }
 
-  const isBusy = authLoading || (session && profileLoading);
+  const shouldShowLoading = authLoading || (!!session && profileLoading);
+  const hasAuthenticatedProfile = !!session && !!profile;
 
   return (
     <div className={`app ${dark ? "theme-dark" : "theme-light"}`}>
@@ -114,12 +130,8 @@ export default function App() {
         <div className="video-overlay" />
 
         <div className="app-content">
-          {isBusy ? (
-            <div className="auth-shell">
-              <section className="glass-panel auth-card loading-card">
-                <p className="auth-title">Loading your workspace...</p>
-              </section>
-            </div>
+          {shouldShowLoading ? (
+            <LoadingShell />
           ) : profileError ? (
             <div className="auth-shell">
               <StatePanel kind="error" title="Profile Error" description={profileError} />
@@ -128,7 +140,7 @@ export default function App() {
             <Routes>
               <Route
                 path="/auth"
-                element={session && profile ? <Navigate to={pathByRole(profile.role)} replace /> : <AuthPage />}
+                element={hasAuthenticatedProfile ? <Navigate to={pathByRole(profile.role)} replace /> : <AuthPage />}
               />
 
               <Route
@@ -138,7 +150,7 @@ export default function App() {
                     <DashboardView
                       dark={dark}
                       onToggleTheme={() => setDark((current) => !current)}
-                      user={session.user}
+                      user={session?.user}
                       onLogout={handleLogout}
                     />
                   </ProtectedRoute>
@@ -152,7 +164,7 @@ export default function App() {
                     <StudentDashboard
                       dark={dark}
                       onToggleTheme={() => setDark((current) => !current)}
-                      user={session.user}
+                      user={session?.user}
                       onLogout={handleLogout}
                     />
                   </ProtectedRoute>
@@ -162,7 +174,7 @@ export default function App() {
               <Route
                 path="*"
                 element={
-                  session && profile ? (
+                  hasAuthenticatedProfile ? (
                     <Navigate to={pathByRole(profile.role)} replace />
                   ) : (
                     <Navigate to="/auth" replace />
