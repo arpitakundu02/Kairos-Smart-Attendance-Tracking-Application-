@@ -9,3 +9,5 @@
 The app expects these env vars:
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
+- `VITE_USE_MOCK_DATA` (`true` to preview UI with fallback sample data when records are empty)
+- `VITE_TEACHER_EMAILS` (comma-separated emails auto-assigned as `teacher` on signup)

@@ -1,4 +1,16 @@
 import { supabase } from "./supabase";
+import { mockStudentDashboard, mockTeacherDashboard } from "../data/mockData";
+
+const useMockData = import.meta.env.VITE_USE_MOCK_DATA === "true";
+const teacherEmailList = (import.meta.env.VITE_TEACHER_EMAILS || "")
+  .split(",")
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean);
+
+function resolveDefaultRole(email) {
+  if (!email) return "student";
+  return teacherEmailList.includes(email.toLowerCase()) ? "teacher" : "student";
+}
 
 function assertClient() {
   if (!supabase) {
@@ -93,11 +105,12 @@ export async function loginUser({ email, password }) {
 
 export async function signupUser({ email, password }) {
   assertClient();
+  const role = resolveDefaultRole(email);
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { role: "student" },
+      data: { role },
     },
   });
 
@@ -118,6 +131,7 @@ export async function logoutUser() {
 
 export async function ensureProfile(user) {
   assertClient();
+  const role = resolveDefaultRole(user.email);
 
   const { data, error } = await supabase
     .from("profiles")
@@ -136,7 +150,7 @@ export async function ensureProfile(user) {
         {
           id: user.id,
           email: user.email,
-          role: "student",
+          role,
         },
         { onConflict: "id" }
       )
@@ -178,6 +192,10 @@ export async function fetchTeacherDashboardData(teacherId) {
   const classIds = classes.map((item) => item.id);
 
   if (!classIds.length) {
+    if (useMockData) {
+      return mockTeacherDashboard;
+    }
+
     return {
       classes: [],
       stats: [
@@ -366,6 +384,10 @@ export async function fetchStudentDashboardData(studentId) {
   }));
 
   const classNames = enrollments.map((item) => item.classes?.name).filter(Boolean);
+
+  if (!attendance.length && useMockData) {
+    return mockStudentDashboard;
+  }
 
   return {
     stats: [

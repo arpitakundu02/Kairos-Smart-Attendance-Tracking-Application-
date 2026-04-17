@@ -6,6 +6,7 @@ import { DashboardView } from "./components/DashboardView";
 import { StudentDashboard } from "./components/StudentDashboard";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { StatePanel } from "./components/StatePanel";
+import { InstallPrompt } from "./components/InstallPrompt";
 import { ensureProfile, logoutUser } from "./lib/dataApi";
 import { hasSupabaseEnv, supabase } from "./lib/supabase";
 
@@ -24,22 +25,11 @@ function LoadingShell() {
 }
 
 export default function App() {
-  const [dark, setDark] = useState(() => {
-    const savedTheme = window.localStorage.getItem("kairos-theme");
-    if (savedTheme === "light") return false;
-    if (savedTheme === "dark") return true;
-    return true;
-  });
-
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState("");
-
-  useEffect(() => {
-    window.localStorage.setItem("kairos-theme", dark ? "dark" : "light");
-  }, [dark]);
 
   useEffect(() => {
     if (!hasSupabaseEnv || !supabase) {
@@ -121,15 +111,16 @@ export default function App() {
   const hasAuthenticatedProfile = !!session && !!profile;
 
   return (
-    <div className={`app ${dark ? "theme-dark" : "theme-light"}`}>
-      <div className="video-shell w-full h-screen">
-        <video autoPlay loop muted playsInline className="video-bg" aria-hidden="true">
-          <source src="/bg.mp4" type="video/mp4" />
-        </video>
+    <div className="app theme-dark">
+      <video autoPlay loop muted playsInline className="video-bg" aria-hidden="true">
+        <source src="/bg.mp4" type="video/mp4" />
+      </video>
 
+      <div className="video-shell w-full h-screen">
         <div className="video-overlay" />
 
         <div className="app-content">
+          <InstallPrompt />
           {shouldShowLoading ? (
             <LoadingShell />
           ) : profileError ? (
@@ -148,8 +139,6 @@ export default function App() {
                 element={
                   <ProtectedRoute session={session} profile={profile} allowedRole="teacher">
                     <DashboardView
-                      dark={dark}
-                      onToggleTheme={() => setDark((current) => !current)}
                       user={session?.user}
                       onLogout={handleLogout}
                     />
@@ -162,8 +151,6 @@ export default function App() {
                 element={
                   <ProtectedRoute session={session} profile={profile} allowedRole="student">
                     <StudentDashboard
-                      dark={dark}
-                      onToggleTheme={() => setDark((current) => !current)}
                       user={session?.user}
                       onLogout={handleLogout}
                     />

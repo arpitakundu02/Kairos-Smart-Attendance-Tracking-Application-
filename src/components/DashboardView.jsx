@@ -8,6 +8,7 @@ import { AttendanceTable } from "./AttendanceTable";
 import { ClassManagement } from "./ClassManagement";
 import { TeacherAttendanceManager } from "./TeacherAttendanceManager";
 import { StatePanel } from "./StatePanel";
+import { EmptyStateCard } from "./EmptyStateCard";
 import {
   fetchClassAttendanceForDate,
   fetchClassRoster,
@@ -21,7 +22,7 @@ function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function DashboardView({ dark, onToggleTheme, user, onLogout }) {
+export function DashboardView({ user, onLogout }) {
   const [activeSection, setActiveSection] = useState("Dashboard");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -145,12 +146,13 @@ export function DashboardView({ dark, onToggleTheme, user, onLogout }) {
 
     if (!dashboardData.classes.length) {
       return (
-        <StatePanel
-          kind="info"
-          title="No classes yet"
-          description="Create classes in Supabase and assign this teacher to begin tracking attendance."
-        />
-      );
+          <EmptyStateCard
+            title="No classes connected yet"
+            message="You haven’t joined any class yet."
+            ctaLabel="Create Class"
+            ctaHint="Create a class and enroll students to start marking attendance."
+          />
+        );
     }
 
     if (activeSection === "Classes") {
@@ -204,10 +206,19 @@ export function DashboardView({ dark, onToggleTheme, user, onLogout }) {
           />
         </section>
 
-        <AttendanceTable
-          title={activeSection === "Reports" ? "Attendance Report" : "Recent Attendance"}
-          rows={dashboardData.recentRows}
-        />
+        {dashboardData.recentRows.length ? (
+          <AttendanceTable
+            title={activeSection === "Reports" ? "Attendance Report" : "Recent Attendance"}
+            rows={dashboardData.recentRows}
+          />
+        ) : (
+          <EmptyStateCard
+            title="No attendance records yet"
+            message="Wait for teacher to mark attendance."
+            ctaLabel="Open Attendance"
+            ctaHint="Choose a class and date in Attendance tab to start marking records."
+          />
+        )}
       </>
     );
   })();
@@ -220,8 +231,6 @@ export function DashboardView({ dark, onToggleTheme, user, onLogout }) {
 
       <main className="dashboard-main">
         <TopNavbar
-          dark={dark}
-          onToggleTheme={onToggleTheme}
           title={activeSection}
           userEmail={user.email}
           roleLabel="Teacher"
